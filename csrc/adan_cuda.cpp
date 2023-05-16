@@ -5,7 +5,6 @@
 const int MAX_THREADS = 1024;
 
 // Function declarations
-void has_nan_inf_launcher(const torch::Tensor &g_fp16, torch::Tensor mid, torch::Tensor out);
 void adan_launcher(
     const torch::Tensor &param_fp32,
     const torch::Tensor &param_fp16,
