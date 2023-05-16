@@ -85,7 +85,7 @@ void F_adan(
         exp_avg_sq_fp32,
         beta1, beta2, beta3, 
         eps, lr, 
-        scale, 
+        grad_scale, 
         weight_decay, 
         bias_correction1, 
         bias_correction2, 
