@@ -39,7 +39,6 @@ __global__ void adan_fp32_accum(
     exp_avg_sq[global_id] = beta3 * exp_avg_sq[global_id] + (1 - beta3) * update / scale * update;
 
     // Update parameters
-    float local_p = param[global_id];
     float sqrt_scale = sqrtf(scale);
     float denom = sqrtf(exp_avg_sq[global_id]) / bias_correction3_sqrt * sqrt_scale + eps * sqrt_scale;
     float step_size_diff = lr * beta2 / bias_correction2;

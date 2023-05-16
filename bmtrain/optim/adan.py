@@ -122,6 +122,16 @@ class AdanOptimizer(torch.optim.Optimizer):
         # update parameters
         for group in self.param_groups:
             beta1, beta2, beta3 = group['betas']
+            if 'step' in group:
+                group['step'] += 1
+            else:
+                group['step'] = 1
+                
+            # update the steps for each param group update
+            bias_correction1 = 1.0 - beta1**group['step']
+            bias_correction2 = 1.0 - beta2**group['step']
+            bias_correction3_sqrt = math.sqrt(1.0 - beta3**group['step'])
+
             for p in group['params']:
                 if p.grad is not None and p.requires_grad:
                     if p.grad.is_sparse:
@@ -147,15 +157,6 @@ class AdanOptimizer(torch.optim.Optimizer):
                             
                         state['neg_pre_grad'] = p.grad.clone().mul_(-1.0)
                 
-                        
-
-                    # update the steps for each param group update
-                    state['step'] += 1
-                    
-                    bias_correction1 = 1.0 - beta1**group['step']
-                    bias_correction2 = 1.0 - beta2**group['step']
-                    bias_correction3_sqrt = math.sqrt(1.0 - beta3**group['step'])
-                        
                     if p.dtype == torch.half:
                         C.f_adan(
                             state["_param_fp32"],   # fp32
