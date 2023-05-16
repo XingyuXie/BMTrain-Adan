@@ -93,22 +93,7 @@ void F_adan(
     );
 }
 
-void F_has_inf_nan(const torch::Tensor &g_fp16, torch::Tensor &out) {
-    // Check input tensors
-    CHECK_INPUT(g_fp16);
-    CHECK_INPUT(out);
-    AT_ASSERTM(g_fp16.dtype() == torch::kHalf, "g_fp16 must be a half tensor");
-    AT_ASSERTM(out.dtype() == torch::kUInt8, "out must be a uint8 tensor");
-
-    // Prepare temporary tensor
-    torch::Tensor mid = out.new_zeros({MAX_THREADS});
-
-    // Call the launcher function
-    has_nan_inf_launcher(g_fp16, mid, out);
-}
-
 // Pybind11 module definition
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
     m.def("f_adan", &F_adan, "adan function");
-    m.def("f_has_inf_nan", &F_has_inf_nan, "has inf or nan");
 }
