@@ -1,15 +1,8 @@
 import torch
 from torch import Tensor
 import math
-from ..global_var import config
-import torch.optim._functional as F
-from . import _cuda as C
-from .. import nccl
-import inspect
+from . import _cuda_adan as C
 
-from copy import deepcopy
-from itertools import chain
-from collections import defaultdict
 
 def _single_tensor_adan(
     param: Tensor,
