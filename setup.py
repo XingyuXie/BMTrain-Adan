@@ -54,7 +54,9 @@ if os.environ.get("GITHUB_ACTIONS", "false") == "false":
         ], include_dirs=["csrc/nccl/build/include"], extra_compile_args={}),
         CUDAExtension('bmtrain.optim._cuda', [
             'csrc/adam_cuda.cpp',
+            'csrc/adan_cuda.cpp',
             'csrc/cuda/adam.cu',
+            'csrc/cuda/adan.cu',
             'csrc/cuda/has_inf_nan.cu'
         ], extra_compile_args={}),
         CppExtension("bmtrain.optim._cpu", [
