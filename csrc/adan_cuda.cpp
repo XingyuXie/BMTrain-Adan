@@ -86,7 +86,7 @@ void F_adan(
         beta1, beta2, beta3, 
         eps, lr, 
         grad_scale, 
-        weight_decay, 
+        decay, 
         bias_correction1, 
         bias_correction2, 
         bias_correction3_sqrt
