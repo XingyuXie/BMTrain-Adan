@@ -108,7 +108,9 @@ class AdanOptimizer(torch.optim.Optimizer):
                     state = self.state[p]
                     if len(state) > 0:
                         state['exp_avg'] *= delta
+                        state['exp_avg_diff'] *= delta
                         state['exp_avg_sq'] *= delta
+                        state['neg_pre_grad'] *= delta
 
     @torch.no_grad()
     def step(self, closure=None, scale=1):
