@@ -62,6 +62,11 @@ if os.environ.get("GITHUB_ACTIONS", "false") == "false":
             'csrc/cuda/adan.cu',
             'csrc/cuda/has_inf_nan.cu'
         ], extra_compile_args={}),
+        CUDAExtension('bmtrain.optim._cuda_adan2nd', [
+            'csrc/adan2nd_cuda.cpp',
+            'csrc/cuda/adan2nd.cu',
+            'csrc/cuda/has_inf_nan.cu'
+        ], extra_compile_args={}),
         CppExtension("bmtrain.optim._cpu", [
             "csrc/adam_cpu.cpp",
         ], extra_compile_args=[
