@@ -21,7 +21,7 @@ void adan2nd_launcher(
     float weight_decay, 
     float bias_correction1, 
     float bias_correction2, 
-    float bias_correction3_sqrt
+    float bias_correction3
 );
 
 // Macro definitions for checking tensor properties
@@ -42,7 +42,7 @@ void F_adan2nd(
     float beta1, float beta2, //float beta3,
     float bias_correction1,
     float bias_correction2,
-    float bias_correction3_sqrt,
+    float bias_correction3,
     float lr, float decay, float eps, float rho,
     float grad_scale)
 {
@@ -100,7 +100,7 @@ void F_adan2nd(
         decay, 
         bias_correction1, 
         bias_correction2, 
-        bias_correction3_sqrt
+        bias_correction3
     );
 }
 

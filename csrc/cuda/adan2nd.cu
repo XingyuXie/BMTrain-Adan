@@ -71,7 +71,7 @@ void adan2nd_launcher(
     float weight_decay, 
     float bias_correction1, 
     float bias_correction2, 
-    float bias_correction3_sqrt
+    float bias_correction3
 ) {
     int32_t n = param_fp32.numel();
     if (n <= 0) return;
@@ -100,6 +100,6 @@ void adan2nd_launcher(
         exp_avg_sq_ptr, param_ptr, param_h_ptr,
         beta1, beta2, eps, lr, rho,
         scale, weight_decay,
-        bias_correction1, bias_correction2, bias_correction3_sqrt
+        bias_correction1, bias_correction2, bias_correction3
     );
 }
