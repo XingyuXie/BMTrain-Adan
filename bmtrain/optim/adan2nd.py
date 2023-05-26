@@ -188,7 +188,7 @@ class Adan2ndOptimizer(torch.optim.Optimizer):
             # update the steps for each param group update
             bias_correction1 = 1.0 - beta1**group['step']
             bias_correction2 = 1.0 - beta2**group['step']
-            bias_correction3 = 1.0 - beta3**group['h_step']
+            bias_correction3 = 1.0 - beta3**group.get('h_step',1)
 
             for p in group['params']:
                 if p.grad is not None and p.requires_grad:
