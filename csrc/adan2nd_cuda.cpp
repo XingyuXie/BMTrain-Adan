@@ -16,7 +16,7 @@ void adan2nd_launcher(
     const torch::Tensor &exp_avg_diff_fp32,
     const torch::Tensor &exp_avg_sq_fp32,
     float beta1, float beta2, // float beta3, 
-    float eps, float lr, 
+    float eps, float lr, float rho,
     float scale, 
     float weight_decay, 
     float bias_correction1, 
