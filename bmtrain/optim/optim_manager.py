@@ -103,7 +103,7 @@ class OptimManager:
         for optimizer in self.optimizers:
             optimizer.zero_grad()
 
-    def step(self):
+    def step(self, update_hess=False):
         """
         Backward with loss scale.
         Synchronize streams before optimizer steps.
@@ -128,16 +128,16 @@ class OptimManager:
                 
         for optimizer, lr_scheduler in zip(self.optimizers, self.lr_schedulers):
             if hasattr(optimizer, "_bmtrain_optimizer") and optimizer._bmtrain_optimizer:
-                optimizer.step(scale=self.loss_scale)
+                optimizer.step(scale=self.loss_scale) if not update_hess else optimizer.update_hessian(scale=self.loss_scale)
             else:
                 if self.loss_scale_enabled:
                     grad_rescale(optimizer.param_groups, self.loss_scale)
-                optimizer.step()
+                optimizer.step() if not update_hess else optimizer.update_hessian()
 
-            if lr_scheduler is not None:
+            if lr_scheduler is not None and not update_hess:
                 lr_scheduler.step()
 
-        if self.loss_scale_enabled:
+        if self.loss_scale_enabled and not update_hess:
             self.steps_since_last_scale += 1
 
             if self.steps_since_last_scale >= self.loss_scale_steps:

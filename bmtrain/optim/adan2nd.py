@@ -50,7 +50,7 @@ def _single_tensor_adan(
     lr: float,
     weight_decay: float,
     eps: float,
-    rho=1.0,
+    rho_bs=256.0,
     scale
 ):
     grad.div_(scale)
@@ -69,11 +69,11 @@ def _single_tensor_adan(
     #     hessian_estimate.div_(scale)
     #     h_sq.mul_(beta3).add_(1 - beta3, hessian_estimate)
     
-    denom = (h_sq / bias_correction3).clamp_(min=eps)
+    denom = (h_sq / bias_correction3).mul_(rho_bs).add_(eps)
     torch.div(exp_avg, bias_correction1, out=neg_grad_or_diff)
     torch.add(neg_grad_or_diff, exp_avg_diff,
               alpha=beta2 / bias_correction2, out=neg_grad_or_diff)
-    neg_grad_or_diff.div_(denom).clamp_(max=rho)
+    neg_grad_or_diff.div_(denom).clamp_(min=-1.0, max=1.0)
     # step_size_diff = lr * beta2 / bias_correction2
     # step_size = lr / bias_correction1
     # param.addcdiv_(exp_avg, denom, value=-step_size)
@@ -107,9 +107,10 @@ class Adan2ndOptimizer(torch.optim.Optimizer):
                  params,
                  lr=1e-3,
                  betas=(0.98, 0.92, 0.99),
-                 eps=1e-12,
+                 eps=1e-15,
                  weight_decay=0.0,
-                 rho=1.0):
+                 rho=0.03,
+                 bs=256):
         if not 0.0 <= lr:
             raise ValueError('Invalid learning rate: {}'.format(lr))
         if not 0.0 <= eps:
@@ -128,7 +129,8 @@ class Adan2ndOptimizer(torch.optim.Optimizer):
                         betas=betas,
                         eps=eps,
                         weight_decay=weight_decay,
-                        rho=rho)
+                        rho=rho,
+                        bs=bs)
         super().__init__(params, defaults)
 
 
@@ -144,7 +146,7 @@ class Adan2ndOptimizer(torch.optim.Optimizer):
                         state['h_sq'] *= delta
                         state['neg_pre_grad'] *= delta
                         
-    def update_hessian(self, scale):
+    def update_hessian(self, scale=1.0):
         for group in self.param_groups:
             beta1, beta2, beta3 = group['betas']
             if 'h_step' in group:
@@ -155,10 +157,12 @@ class Adan2ndOptimizer(torch.optim.Optimizer):
                 if p.grad is None:
                     continue
                 state = self.state[p]
+                if 'h_sq' not in state:
+                    state['h_sq'] = torch.zeros(p.size(), dtype=torch.float32, device=p.device)   # on device
                 if p.dtype == torch.half:
-                    state['h_sq'].mul_(beta2).addcmul_(p.grad.float(), p.grad.float(), value=(1 - beta3)/scale)
+                    state['h_sq'].mul_(beta3).addcmul_(p.grad.float(), p.grad.float(), value=(1 - beta3)/scale)
                 else:
-                    state['h_sq'].mul_(beta2).addcmul_(p.grad, p.grad, value=(1 - beta3)/scale)
+                    state['h_sq'].mul_(beta3).addcmul_(p.grad, p.grad, value=(1 - beta3)/scale)
                 # h_sq = real * scale
 
 
@@ -238,7 +242,7 @@ class Adan2ndOptimizer(torch.optim.Optimizer):
                             group['lr'],
                             group['weight_decay'],
                             group['eps'],
-                            group['rho'],
+                            group['rho']*group['bs'],
                             scale
                         )
                     else:
@@ -259,7 +263,7 @@ class Adan2ndOptimizer(torch.optim.Optimizer):
                             group['lr'],
                             group['weight_decay'],
                             group['eps'],
-                            group['rho'],
+                            group['rho']*group['bs'],
                             scale
                         )
                     state['neg_pre_grad'].zero_().add_(p.grad, alpha=-1.0)

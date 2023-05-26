@@ -43,12 +43,12 @@ __global__ void adan2nd_fp32_accum(
     // }
 
     // Update parameters
-    float denom = max(exp_avg_sq[global_id] / bias_correction3, eps * scale);
+    float denom = exp_avg_sq[global_id] / bias_correction3 * rho + eps * scale;
     float step_size_diff = lr * beta2 / bias_correction2;
     float step_size = lr / bias_correction1;
 
     param[global_id] -= min(step_size * exp_avg[global_id] / denom
-                        + step_size_diff * exp_avg_diff[global_id] / denom, lr*rho);
+                        + step_size_diff * exp_avg_diff[global_id] / denom, lr);
     param[global_id] /= (1 + lr * weight_decay);
 
     param_h[global_id] = __float2half(param[global_id]);
