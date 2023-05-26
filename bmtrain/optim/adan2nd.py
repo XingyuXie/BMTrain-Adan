@@ -1,7 +1,7 @@
 import torch
 from torch import Tensor
 import math
-from . import _cuda_adan as C
+from . import _cuda_adan2nd as C
 
 import bmtrain.distributed as dist
 from ..global_var import config
