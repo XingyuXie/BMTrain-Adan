@@ -35,11 +35,11 @@ void F_adan2nd(
     const torch::Tensor &param_fp16,
     const torch::Tensor &g_fp16,
     const torch::Tensor &neg_pre_g_fp16,
-    const std::optional<torch::Tensor> &hessian_est_fp16,
+    // const std::optional<torch::Tensor> &hessian_est_fp16,
     const torch::Tensor &exp_avg_fp32,
     const torch::Tensor &exp_avg_diff_fp32,
     const torch::Tensor &exp_avg_sq_fp32,
-    float beta1, float beta2, float beta3,
+    float beta1, float beta2, //float beta3,
     float bias_correction1,
     float bias_correction2,
     float bias_correction3_sqrt,
@@ -77,12 +77,12 @@ void F_adan2nd(
     AT_ASSERTM(exp_avg_diff_fp32.dtype() == torch::kFloat, "exp_avg_diff_fp32 must be a float tensor");
     AT_ASSERTM(exp_avg_sq_fp32.dtype() == torch::kFloat, "exp_avg_sq_fp32 must be a float tensor");
     
-    if (hessian_est_fp16.has_value()):
-        torch::Tensor hessian_est_fp16 = hessian_est_fp16.value();
-        CHECK_INPUT(hessian_est_fp16);
-        AT_ASSERTM(hessian_est_fp16.numel() == num_elem,
-            "number of elements in hessian_est_fp16 and p tensors should be equal");
-        AT_ASSERTM(hessian_est_fp16.dtype() == torch::kHalf, "hessian_est_fp16 must be a half tensor");
+    // if (hessian_est_fp16.has_value()):
+    //     torch::Tensor hessian_est_fp16 = hessian_est_fp16.value();
+    //     CHECK_INPUT(hessian_est_fp16);
+    //     AT_ASSERTM(hessian_est_fp16.numel() == num_elem,
+    //         "number of elements in hessian_est_fp16 and p tensors should be equal");
+    //     AT_ASSERTM(hessian_est_fp16.dtype() == torch::kHalf, "hessian_est_fp16 must be a half tensor");
 
     // Call the launcher function
     adan2nd_launcher(
@@ -90,11 +90,11 @@ void F_adan2nd(
         param_fp16,
         g_fp16,
         neg_pre_g_fp16,
-        hessian_est_fp16,
+        // hessian_est_fp16,
         exp_avg_fp32,
         exp_avg_diff_fp32,
         exp_avg_sq_fp32,
-        beta1, beta2, beta3, 
+        beta1, beta2, //beta3, 
         eps, lr, rho,
         grad_scale, 
         decay, 

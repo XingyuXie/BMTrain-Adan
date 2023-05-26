@@ -8,7 +8,7 @@ __global__ void adan2nd_fp32_accum(
     int32_t n,
     const half *g,            // (n)
     const half *neg_pre_g,    // (n)
-    const half *hessian_est,  // (n), could be nullptr
+    // const half *hessian_est,  // (n), could be nullptr
     float *exp_avg,           // (n)
     float *exp_avg_diff,      // (n)
     float *exp_avg_sq,        // (n)
@@ -16,7 +16,7 @@ __global__ void adan2nd_fp32_accum(
     half *param_h,            // (n)
     float beta1,
     float beta2,
-    float beta3,
+    // float beta3,
     float eps,
     float lr,
     float rho,
@@ -36,11 +36,11 @@ __global__ void adan2nd_fp32_accum(
     exp_avg[global_id] = beta1 * exp_avg[global_id] + (1 - beta1) * local_g;
     exp_avg_diff[global_id] = beta2 * exp_avg_diff[global_id] + (1 - beta2) * update;
 
-    // Update exp_avg_sq
-    if (hessian_est != nullptr) {
-        // real_est * scale
-        exp_avg_sq[global_id] = beta3 * exp_avg_sq[global_id] + (1 - beta3) * __half2float(hessian_est[global_id]);
-    }
+    // // Update exp_avg_sq
+    // if (hessian_est != nullptr) {
+    //     // real_est * scale
+    //     exp_avg_sq[global_id] = beta3 * exp_avg_sq[global_id] + (1 - beta3) * __half2float(hessian_est[global_id]);
+    // }
 
     // Update parameters
     float denom = max(exp_avg_sq[global_id] / bias_correction3, eps * scale);
@@ -61,11 +61,11 @@ void adan2nd_launcher(
     const torch::Tensor &param_fp16,
     const torch::Tensor &g_fp16,
     const torch::Tensor &neg_pre_g_fp16,
-    const std::optional<torch::Tensor> &hessian_est_fp16,
+    // const std::optional<torch::Tensor> &hessian_est_fp16,
     const torch::Tensor &exp_avg_fp32,
     const torch::Tensor &exp_avg_diff_fp32,
     const torch::Tensor &exp_avg_sq_fp32,
-    float beta1, float beta2, float beta3, 
+    float beta1, float beta2, //float beta3, 
     float eps, float lr, float rho,
     float scale, 
     float weight_decay, 
@@ -84,10 +84,10 @@ void adan2nd_launcher(
     auto param_ptr = param_fp32.data_ptr<float>();
     auto param_h_ptr = reinterpret_cast<half*>(param_fp16.data_ptr<at::Half>());
 
-    half* hessian_est_ptr = nullptr;
-    if (hessian_est_fp16.has_value()) {
-        hessian_est_ptr = reinterpret_cast<half*>(hessian_est_fp16.value().data_ptr<at::Half>());
-    }
+    // half* hessian_est_ptr = nullptr;
+    // if (hessian_est_fp16.has_value()) {
+    //     hessian_est_ptr = reinterpret_cast<half*>(hessian_est_fp16.value().data_ptr<at::Half>());
+    // }
 
     int32_t threads = 1024;
     dim3 block_size = dim3(threads, 1, 1);
@@ -96,12 +96,10 @@ void adan2nd_launcher(
     auto stream = at::cuda::getCurrentCUDAStream();
 
     adan2nd_fp32_accum<<<grid_size, block_size, 0, stream.stream()>>>(
-        n, g_ptr, neg_pre_g_ptr, hessian_est_ptr, exp_avg_ptr, exp_avg_diff_ptr, 
+        n, g_ptr, neg_pre_g_ptr, exp_avg_ptr, exp_avg_diff_ptr, 
         exp_avg_sq_ptr, param_ptr, param_h_ptr,
-        beta1, beta2, beta3, eps, lr, rho,
+        beta1, beta2, eps, lr, rho,
         scale, weight_decay,
         bias_correction1, bias_correction2, bias_correction3_sqrt
     );
-}
-
 }

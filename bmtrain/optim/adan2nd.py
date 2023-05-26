@@ -36,14 +36,14 @@ def _single_tensor_adan(
     param: Tensor,
     grad: Tensor,
     neg_pre_grad: Tensor,
-    hessian_estimate: Tensor,
+    # hessian_estimate: Tensor,
     exp_avg: Tensor,
     exp_avg_diff: Tensor,
     h_sq: Tensor,
     *,
     beta1: float,
     beta2: float,
-    beta3: float,
+    # beta3: float,
     bias_correction1: float,
     bias_correction2: float,
     bias_correction3: float,
@@ -64,10 +64,10 @@ def _single_tensor_adan(
     exp_avg_diff.mul_(beta2).add_(neg_grad_or_diff,
                                     alpha=1 - beta2)  # diff_t
 
-    # neg_grad_or_diff.mul_(beta2).add_(grad)
-    if hessian_estimate is not None:
-        hessian_estimate.div_(scale)
-        h_sq.mul_(beta3).add_(1 - beta3, hessian_estimate)
+    # # neg_grad_or_diff.mul_(beta2).add_(grad)
+    # if hessian_estimate is not None:
+    #     hessian_estimate.div_(scale)
+    #     h_sq.mul_(beta3).add_(1 - beta3, hessian_estimate)
     
     denom = (h_sq / bias_correction3).clamp_(min=eps)
     torch.div(exp_avg, bias_correction1, out=neg_grad_or_diff)
@@ -109,7 +109,7 @@ class Adan2ndOptimizer(torch.optim.Optimizer):
                  betas=(0.98, 0.92, 0.99),
                  eps=1e-12,
                  weight_decay=0.0,
-                 rho=0.01):
+                 rho=1.0):
         if not 0.0 <= lr:
             raise ValueError('Invalid learning rate: {}'.format(lr))
         if not 0.0 <= eps:
@@ -143,9 +143,27 @@ class Adan2ndOptimizer(torch.optim.Optimizer):
                         state['exp_avg_diff'] *= delta
                         state['h_sq'] *= delta
                         state['neg_pre_grad'] *= delta
+                        
+    def update_hessian(self, scale):
+        for group in self.param_groups:
+            beta1, beta2, beta3 = group['betas']
+            if 'h_step' in group:
+                group['h_step'] += 1
+            else:
+                group['h_step'] = 1
+            for p in group['params']:
+                if p.grad is None:
+                    continue
+                state = self.state[p]
+                if p.dtype == torch.half:
+                    state['h_sq'].mul_(beta2).addcmul_(p.grad.float(), p.grad.float(), value=(1 - beta3)/scale)
+                else:
+                    state['h_sq'].mul_(beta2).addcmul_(p.grad, p.grad, value=(1 - beta3)/scale)
+                # h_sq = real * scale
+
 
     @torch.no_grad()
-    def step(self, closure=None, scale=1, loss_small=None):
+    def step(self, closure=None, scale=1):
         """Performs a single optimization step.
         Arguments:
             closure (callable, optional): A closure that reevaluates the model
@@ -165,12 +183,7 @@ class Adan2ndOptimizer(torch.optim.Optimizer):
                 group['step'] += 1
             else:
                 group['step'] = 1
-                
-            if 'h_step' in group:
-                if loss_small is not None:
-                    group['h_step'] += 1
-            else:
-                group['h_step'] = 1
+
                 
             # update the steps for each param group update
             bias_correction1 = 1.0 - beta1**group['step']
@@ -202,9 +215,9 @@ class Adan2ndOptimizer(torch.optim.Optimizer):
                             
                         state['neg_pre_grad'] = p.grad.clone().mul_(-1.0)
                         
-                    hessian_estimate=None
-                    if loss_small is not None:
-                        hessian_estimate = hutchinson(loss_small, p, scale)
+                    # hessian_estimate=None
+                    # if loss_small is not None:
+                    #     hessian_estimate = hutchinson(loss_small, p, scale)
                         
                     if p.dtype == torch.half:
                         C.f_adan2nd(
@@ -212,13 +225,13 @@ class Adan2ndOptimizer(torch.optim.Optimizer):
                             p,                      # fp16
                             p.grad,                 # fp16
                             state['neg_pre_grad'],  # fp16
-                            hessian_estimate,       # fp16
+                            # hessian_estimate,       # fp16
                             state['exp_avg'],       # fp32: m
                             state['exp_avg_diff'],  # fp32: diff
                             state["h_sq"],    # fp32: v
                             beta1,
                             beta2,
-                            beta3,
+                            # beta3,
                             bias_correction1,
                             bias_correction2,
                             bias_correction3,
@@ -233,13 +246,13 @@ class Adan2ndOptimizer(torch.optim.Optimizer):
                             p,
                             p.grad,
                             state['neg_pre_grad'],
-                            hessian_estimate,
+                            # hessian_estimate,
                             state['exp_avg'],
                             state['exp_avg_diff'],
                             state["h_sq"],
                             beta1,
                             beta2,
-                            beta3,
+                            # beta3,
                             bias_correction1,
                             bias_correction2,
                             bias_correction3,
