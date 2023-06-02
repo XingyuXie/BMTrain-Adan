@@ -43,8 +43,8 @@ __global__ void adan_fp32_accum(
     float step_size_diff = lr * beta2 / bias_correction2;
     float step_size = lr / bias_correction1;
 
-    param[global_id] -= (step_size * exp_avg[global_id] / denom
-                        + step_size_diff * exp_avg_diff[global_id] / denom);
+    param[global_id] -= max(min(step_size * exp_avg[global_id] / denom
+                        + step_size_diff * exp_avg_diff[global_id] / denom, lr), -lr);
     param[global_id] /= (1 + lr * weight_decay);
 
     param_h[global_id] = __float2half(param[global_id]);
